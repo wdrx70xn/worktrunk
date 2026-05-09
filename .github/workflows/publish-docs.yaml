@@ -1,68 +1,55 @@
 name: publish-docs
-# Runner versions pinned; see ci.yaml header comment for rationale.
-
-on:
+'on':
   push:
     branches:
-      - main
+    - main
     paths:
-      - 'docs/**'
-      - 'src/cli/mod.rs'
-  workflow_dispatch:
-
+    - docs/**
+    - src/cli/mod.rs
+  workflow_dispatch: null
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   build-docs:
     runs-on: ubuntu-24.04
-
     steps:
-      - name: 📂 Checkout code
-        uses: actions/checkout@v6
+    - name: "\U0001F4C2 Checkout code"
+      uses: actions/checkout@v6
+    - name: Setup Zola
+      uses: taiki-e/install-action@v2.77.1
+      with:
+        tool: zola@0.22.1
+    - name: Fetch assets
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: 'gh repo clone max-sixty/worktrunk-assets /tmp/worktrunk-assets -- --depth
+        1
 
-      - name: Setup Zola
-        uses: taiki-e/install-action@v2.77.1
-        with:
-          tool: zola@0.22.1
+        cp -r /tmp/worktrunk-assets/assets docs/static/
 
-      - name: Fetch assets
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh repo clone max-sixty/worktrunk-assets /tmp/worktrunk-assets -- --depth 1
-          cp -r /tmp/worktrunk-assets/assets docs/static/
-
-      - name: 🕷️ Build docs
-        run: zola build
-        working-directory: docs
-
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: docs/public/
-          retention-days: 1
-
+        '
+    - name: "\U0001F577\uFE0F Build docs"
+      run: zola build
+      working-directory: docs
+    - uses: actions/upload-pages-artifact@v5
+      with:
+        path: docs/public/
+        retention-days: 1
   deploy-docs:
     needs: build-docs
     runs-on: ubuntu-24.04
-
-    # Don't attempt to publish if on a fork
-    if: ${{ github.repository_owner == 'max-sixty' }}
-
+    if: ${{ github.repository_owner == 'wdrx70xn' }}
     permissions:
       pages: write
       id-token: write
-
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v6
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+    - name: Setup Pages
+      id: pages
+      uses: actions/configure-pages@v6
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5
